@@ -1,0 +1,62 @@
+import subprocess
+
+# Project details
+folder = "/home/prasad/engineering_project"
+user = "labuser"
+ip = "192.168.1.100"
+remote_path = "/home/labuser/deployments"
+
+# Remote computer address
+remote = user + "@" + ip
+
+# Execute Linux commands
+def run_command(command):
+    subprocess.run(command, check=True)
+
+# Main deployment function
+def deploy():
+
+    try:
+        print("Starting deployment...")
+
+        # Step 1: Check Git status
+        run_command(["git", "-C", folder, "status"])
+
+        # Step 2: Push latest committed project
+        run_command([
+            "git", "-C", folder,
+            "push", "origin", "main"
+        ])
+
+        # Step 3: Create remote directory
+        run_command([
+            "ssh", remote,
+            "mkdir -p " + remote_path
+        ])
+
+        # Step 4: Transfer project files
+        run_command([
+            "scp", "-r", folder,
+            remote + ":" + remote_path
+        ])
+
+        # Step 5: Protect project files
+        run_command([
+            "ssh", remote,
+            "chmod -R go-rwx " +
+            remote_path + "/engineering_project"
+        ])
+
+        print("Project synchronized successfully!")
+
+    except subprocess.CalledProcessError as error:
+        print("Deployment failed!")
+        print("Error:", error)
+
+    except FileNotFoundError as error:
+        print("Required Linux command not found:", error)
+
+
+# Start deployment
+if __name__ == "__main__":
+    deploy()
